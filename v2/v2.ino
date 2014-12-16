@@ -1,5 +1,4 @@
 #include <QTRSensors.h>
-#include <Servo.h>
 
 #define NUM_SENSORS             6
 #define NUM_SAMPLES_PER_SENSOR  4
@@ -33,11 +32,11 @@ long lastValueTime = 0;
 
 unsigned int sensorValues[NUM_SENSORS];
 
+QTRSensorsRC qtr((unsigned char[]) {0, 1, 2, 3, 4}, 5, 2000, QTR_NO_EMITTER_PIN);
+
 QTRSensorsAnalog qtra((unsigned char[]) {
   0, 1, 2, 3, 4, 5
 }, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
-
-Servo servoMotor;
 
 void setup() {
   Serial.begin(9600);
@@ -51,18 +50,15 @@ void setup() {
   digitalWrite(motorD2, LOW);
   digitalWrite(motorE1, LOW);
   digitalWrite(motorE2, HIGH);
-  servoMotor.attach(8);
-  servoMotor.write(90);
   qtra.emittersOn();
   analogWrite(potenciaD, speedInitialD);
-  analogWrite(potenciaD, speedInitialE);
+  analogWrite(potenciaE, speedInitialE);                     
   delay(1000);
 }
 
-
 void loop() {
   qtra.calibrate();
-  qtra.read(sensorValues, QTR_EMITTERS_OFF);
+  qtra.read(sensorValues, QTR_EMITTERS_ON);
 
   data[0] = sensorValues[3];
   data[1] = sensorValues[5];
@@ -108,35 +104,39 @@ void printValues(int s[6]) {
 };
 
 void setMotor(double error) {
-
+   
   int controlSpeedInitialD;
   int controlSpeedInitialE;
 
   controlSpeedInitialD = 50 - error;
   controlSpeedInitialE = 50 + error;
 
-  if(controlSpeedInitialD > 80) { controlSpeedInitialD = 80; }
+  if(controlSpeedInitialD > 80) { controlSpeedInitialD = 80; }  
   if(controlSpeedInitialE > 80) { controlSpeedInitialE = 80; }
+  if(controlSpeedInitialD < 0) { controlSpeedInitialD = 0; }
+  if(controlSpeedInitialE < 0) { controlSpeedInitialE = 0; }
 
-  if(controlSpeedInitialD < 0 && error > 100) {
+  /*
+  if(controlSpeedInitialD < 0 && error > 50) {
     digitalWrite(motorD1, LOW);
     digitalWrite(motorD2, HIGH);
-    controlSpeedInitialD = 20;
+    controlSpeedInitialD = 10;
   } else {
-    if(controlSpeedInitialD < 0 && error <= 100) controlSpeedInitialD = 0;
+    if(controlSpeedInitialD < 0 && error <= 50) controlSpeedInitialD = 0;
     digitalWrite(motorD1, HIGH);
     digitalWrite(motorD2, LOW);
   }
 
-  if(controlSpeedInitialE < 0 && error < -100) {
+  if(controlSpeedInitialE < 0 && error < -50) {
     digitalWrite(motorE1, HIGH);
     digitalWrite(motorE2, LOW);
-    controlSpeedInitialE = 20;
+    controlSpeedInitialE = 10;
   } else {
-    if(controlSpeedInitialE < 0 && error >= -100) controlSpeedInitialE = 0;
+    if(controlSpeedInitialE < 0 && error >= -50) controlSpeedInitialE = 0;
     digitalWrite(motorE1, LOW);
     digitalWrite(motorE2, HIGH);
   }
+  */
 
   analogWrite(potenciaD, controlSpeedInitialD);
   analogWrite(potenciaE, controlSpeedInitialE);
