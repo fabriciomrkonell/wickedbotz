@@ -1,0 +1,74 @@
+#include <QTRSensors.h>
+#include <Servo.h>
+
+#define NUM_SENSORS             6
+#define NUM_SAMPLES_PER_SENSOR  4
+#define EMITTER_PIN             2
+
+int potenciaE = 3;
+int potenciaD = 6;
+int motorE1 = 2;
+int motorE2 = 4;
+int motorD1 = 5;
+int motorD2 = 7;
+
+QTRSensorsAnalog qtra((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
+unsigned int sensorValues[NUM_SENSORS];
+
+Servo servoMotor;
+
+float Kp = 25, Ki = 0.6, Kd = 2;
+float error = 0, P = 0, I = 0, D = 0, PID_value = 0;
+float previous_error = 0, previous_I = 0;
+int initial_motor_speed = 80;
+
+const int line = 500;
+
+void setup(){
+  Serial.begin(9600);
+  pinMode(motorE1, OUTPUT);
+  pinMode(motorE2, OUTPUT);
+  pinMode(motorD1, OUTPUT);
+  pinMode(motorD2, OUTPUT);
+  pinMode(potenciaE, OUTPUT);
+  pinMode(potenciaD, OUTPUT);
+  digitalWrite(motorD1, HIGH);
+  digitalWrite(motorD2, LOW);  
+  digitalWrite(motorE1, LOW);
+  digitalWrite(motorE2, HIGH);  
+  servoMotor.attach(8);
+  servoMotor.write(90); 
+  delay(1000);
+}
+
+
+void loop(){
+  qtra.read(sensorValues); 
+  printValues(sensorValues);
+  //calculatePID();
+  analogWrite(potenciaD, 120);
+  analogWrite(potenciaE, 120); 
+};
+
+
+void printValues(unsigned int s[NUM_SENSORS]){ 
+  int aux1 = 0;
+  int aux2 = 0;
+  
+  aux1 = 0-(s[5]*(4)) - (s[4]*(2)) - s[3]*0;
+  aux2 = s[2]*0 + (s[1]*2) + (s[0]*4);
+  test =  aux1 + aux2;
+  delay(1000);
+  
+};
+
+/*
+void calculatePID(){
+  P = error;
+  I = I + previous_I;
+  D = error-previous_error;
+  PID_value = (Kp*P) + (Ki*I) + (Kd*D);
+  previous_I=I;
+  previous_error=error;
+}
+*/
