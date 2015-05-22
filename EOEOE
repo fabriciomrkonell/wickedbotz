@@ -1,0 +1,160 @@
+#include <QTRSensors.h>
+#include <Servo.h>
+#include "PID_v1.h"
+
+#define NUM_SENSORS             6
+#define NUM_SAMPLES_PER_SENSOR  4
+#define EMITTER_PIN             9
+
+int potenciaE = 3;
+int potenciaD = 6;
+int motorE1 = 2;
+int motorE2 = 4;
+int motorD1 = 5;
+int motorD2 = 7;
+int angleServo = 90;
+
+const int weight1 = 1;
+const int weight2 = 2;
+const int weight3 = 3;
+
+int data[6], inverse = 0;
+double Setpoint, Input = 0, Output, error;
+double Kp=2, Ki=5, Kd=1;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+
+QTRSensorsAnalog qtra((unsigned char[]) {
+  0, 1, 2, 3, 4, 5
+}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
+unsigned int sensorValues[NUM_SENSORS];
+
+Servo servoMotor;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(motorE1, OUTPUT);
+  pinMode(motorE2, OUTPUT);
+  pinMode(motorD1, OUTPUT);
+  pinMode(motorD2, OUTPUT);
+  pinMode(potenciaE, OUTPUT);
+  pinMode(potenciaD, OUTPUT);
+  digitalWrite(motorD1, HIGH);
+  digitalWrite(motorD2, LOW);
+  digitalWrite(motorE1, LOW);
+  digitalWrite(motorE2, HIGH);
+  servoMotor.attach(8);
+  servoMotor.write(90);
+  qtra.emittersOn();
+  Setpoint = 0;
+  myPID.SetMode(AUTOMATIC);
+  delay(1000);
+}
+
+
+void loop() {
+  qtra.calibrate();
+  qtra.read(sensorValues, QTR_EMITTERS_OFF);
+  
+  data[0] = sensorValues[3];
+  data[1] = sensorValues[5];
+  data[2] = sensorValues[4];
+  data[3] = sensorValues[1];
+  data[4] = sensorValues[0];
+  data[5] = sensorValues[2];
+
+  error = calcError(data);
+  
+  if(error < 0) {
+    inverse = 1;
+    error = -error;
+  } else {
+    inverse = 0;
+  }
+  
+  //Input = error;
+  //myPID.Compute();
+
+  Serial.print(Output);  
+  Serial.println(error);
+  /*angleServo = angleServo + error;  
+  if(angleServo > 160) angleServo = 160;
+  if(angleServo < 20) angleServo = 20;
+  servoMotor.write(angleServo);*/
+  
+};
+
+void printValues2(unsigned int s[6]) {
+  Serial.print(" - ");
+  Serial.print(s[3]);
+  Serial.print(" - ");
+  Serial.print(s[5]);
+  Serial.print(" - ");
+  Serial.print(s[4]);
+  Serial.print(" - ");
+  Serial.print(s[1]);
+  Serial.print(" - ");
+  Serial.print(s[0]);
+  Serial.print(" - ");
+  Serial.print(s[2]);
+  Serial.print("\t\t");
+};
+
+double calcError(int sensors[NUM_SENSORS]) {
+  
+  int sensorSize = 5;
+  
+  float leftHandAux[3] = {
+    -sensors[0] * weight3,
+    -sensors[1] * weight2,
+    -sensors[2] * weight1
+  };
+  
+  float rightHandAux[3] = {
+    sensors[5] * weight3,
+    sensors[4] * weight2,
+    sensors[3] * weight1
+  };
+
+  float leftIntersection[5] = {
+    leftHandAux[2],
+    (leftHandAux[2] + leftHandAux[1]) / 2,
+    leftHandAux[1],
+    (leftHandAux[1] + leftHandAux[0]) / 2,
+    leftHandAux[0]
+  };
+  
+  float rightIntersection[5] = {
+    rightHandAux[2],
+    (rightHandAux[2] + rightHandAux[1]) / 2,
+    rightHandAux[1],
+    (rightHandAux[1] + rightHandAux[0]) / 2,
+    rightHandAux[0]
+  };
+
+  int lessLeft = 1, lessRight = 1, lessLeftIdx = 0, lessRightIdx = 0, lessLeftAux = -9999, lessRightAux = 9999;
+  float leftLessSum = 0, leftMajorSum = 0, rightLessSum = 0, rightMajorSum = 0;
+
+  for (int i = 0; i < sensorSize; i++) {
+    if (leftIntersection[i] > lessLeftAux) {
+      lessLeftAux = leftIntersection[i];
+      lessLeftIdx = i;
+    }
+  }
+  for (int i = 0; i <= lessLeftIdx; i++) leftLessSum += leftIntersection[i];
+  for (int i = lessLeftIdx; i < sensorSize; i++) leftMajorSum += leftIntersection[i];
+
+
+  for (int i = 0; i < sensorSize; i++) {
+    if (rightIntersection[i] < lessRightAux) {
+      lessRightAux = rightIntersection[i];
+      lessRightIdx = i;
+    }
+  }
+  for (int i = 0; i <= lessRightIdx; i++) rightLessSum += rightIntersection[i];
+  for (int i = lessRightIdx; i < sensorSize; i++) rightMajorSum += rightIntersection[i];
+  
+  float calcLeftSomatory = leftLessSum - leftMajorSum;
+  float calcRightSomatory = rightLessSum - rightMajorSum;
+  
+  return ((calcLeftSomatory + calcRightSomatory) * 100) / 14849.5;
+};
