@@ -21,7 +21,8 @@ unsigned int sensorValues[NUM_SENSORS];     // ARRAY DE LEITURA DOS DADOS DO SEN
 int last_proportional,                      // TERMO DO PID, ÚLTIMA LEITURA PROPORCIONAL
     integral,                               // TERMO DO PID, SOMATÓRIA INTEGRAL
     power_difference,                       // TERMO DO PID, DIFERENÇA APLICADA NOS MOTORES
-    proportional;                           // PROPORCIONAL ADAPTADA PARA OS MOTORES DA POLOLU
+    proportional,                           // PROPORCIONAL ADAPTADA PARA OS MOTORES DA POLOLU
+    derivative;                             // TERMO DO PID, DERIVATIVO
 
 const int weight1 = 1;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DO CENTRO
 const int weight2 = 2;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DO MEIO-CENTRO
@@ -94,7 +95,7 @@ void loop() {
     proportional = map(-Output, -110, 110, 1000, 6000) - 3500;
 
     // Calcula o termo derivativo (mudança) e o termo integral (soma) da posição
-    int derivative = proportional - last_proportional;
+    derivative = proportional - last_proportional;
     integral += proportional;
 
     // Lembrando a ultima posição
@@ -104,7 +105,7 @@ void loop() {
     // m1 - m2. Se for um número positivo, o robo irá virar para a
     // direita. Se for um número negativo, o robo irá virar para a esquerda
     // e a magnitude dos números determinam a agudez com que fará as curvas/giros
-    power_difference = proportional/10 + integral/10000 + derivative * 2;
+    power_difference = (proportional / 10) + (integral / 10000) + (derivative * 2);
 
   }
 
