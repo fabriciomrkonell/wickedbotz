@@ -13,8 +13,8 @@ int potenciaE = 3;                          // PINO PWM DE CONTROLE DA RODA ESQU
 int potenciaD = 6;                          // PINO PWM DE CONTROLE DA RODA DIREITA
 int motorE1 = 2;                            // PINO DIGITAL RODA ESQUERDA POLO 1
 int motorE2 = 4;                            // PINO DIGITAL RODA ESQUERDA POLO 2
-int motorD1 = 5;                            // PINO DIGITAL RODA DIREITA POLO 1
-int motorD2 = 7;                            // PINO DIGITAL RODA DIREITA POLO 2
+int motorD1 = 7;                            // PINO DIGITAL RODA DIREITA POLO 1
+int motorD2 = 5;                            // PINO DIGITAL RODA DIREITA POLO 2
 int data[NUM_SENSORS];                      // ARRAY PARA ARMAZENAR OS DADOS DO SENSOR ANALÓGICO
 unsigned int sensorValues[NUM_SENSORS];     // ARRAY DE LEITURA DOS DADOS DO SENSOR ANALÓGICO
 
@@ -29,19 +29,20 @@ const int weight2 = 2;                      // TERMO DE PESO PARA SENSOR ANALÓG
 const int weight3 = 3;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DA MEIO-BORDA
 const int weight4 = 4;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DA BORDA
 
-const int max = 230;                        // VELOCIDADE MÁXIMA ATINGIDA PELO MOTOR
-const int maxInverse = 70;                  // VELOCIDADE MÁXIMA DA INVERSA LIDA PELO MOTOR
-const int errorBound = 40;                  // CONFIGURA O ERRO MÁXIMO PARA QUE UM DOS MOTORES SEJA LIGADO A INVERSA
+const int max = 200;                        // VELOCIDADE MÁXIMA ATINGIDA PELO MOTOR
+int maxInverse = 70;                        // VELOCIDADE MÁXIMA DA INVERSA LIDA PELO MOTOR
+int errorBound = 30;                        // CONFIGURA O ERRO MÁXIMO PARA QUE UM DOS MOTORES SEJA LIGADO A INVERSA
 
 
 QTRSensorsAnalog qtra((unsigned char[]) {   // SENSOR ANALÓGICO INICIALIZAÇÃO
-  A3, A5, A4, A7, A6, A1, A0, A2
+  //A0, A1, A2, A3, A4, A5, A6, A7
+  A7, A6, A5, A4, A3, A2, A1, A0
 }, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
 
 double Output;                              // VARIÁVEL QUE ARMAZENA O ERRO CÁLCULADO DA ADAPTAÇÃO (João)
 
 void setup() {
-
+    
   pinMode(motorE1, OUTPUT);
   pinMode(motorE2, OUTPUT);
   pinMode(motorD1, OUTPUT);
@@ -53,10 +54,8 @@ void setup() {
   digitalWrite(motorD2, LOW);
   digitalWrite(motorE1, LOW);
   digitalWrite(motorE2, HIGH);
-  
+
   qtra.emittersOn();
-  analogWrite(potenciaD, speedInitialD);
-  analogWrite(potenciaD, speedInitialE);
   qtra.calibrate();
 
   for(counter=0; counter < 80; counter++) {
@@ -81,8 +80,8 @@ void loop() {
   data[6] = sensorValues[6];
   data[7] = sensorValues[7];
 
-  // Valida se as leituras devem ser processadas, no caso de nenhuma linha não estar sendo lida o erro anterior 
-  // deve ser mantido, pressupõe-se que o sensor achou uma curva muito fechada e não consegui acompanhar 
+  // Valida se as leituras devem ser processadas, no caso de nenhuma linha não estar sendo lida o erro anterior
+  // deve ser mantido, pressupõe-se que o sensor achou uma curva muito fechada e não consegui acompanhar
   // o grau da curva no tempo de leitura, por isso mantém o erro anterior.
   if(processValues(data) == 1) {
 
@@ -105,7 +104,7 @@ void loop() {
     // m1 - m2. Se for um número positivo, o robo irá virar para a
     // direita. Se for um número negativo, o robo irá virar para a esquerda
     // e a magnitude dos números determinam a agudez com que fará as curvas/giros
-    power_difference = (proportional / 10) + (integral / 10000) + (derivative * 2);
+    power_difference = proportional / 10 + integral / 10000 + derivative * 2;
 
   }
 
@@ -113,7 +112,7 @@ void loop() {
   // um motor com valor negativo
   if(power_difference > max) power_difference = max;
   else if(power_difference < -max) power_difference = -max;
-  
+
   // Define qual motor que será reduzido, se o direito ou o esquerdo
   if(power_difference < 0) set_motors(max + power_difference, max, Output);
   else set_motors(max, max - power_difference, Output);
@@ -126,7 +125,7 @@ void set_motors(int left_speed, int right_speed, int error){
   if(right_speed > 0) {
     digitalWrite(motorD1, HIGH);
     digitalWrite(motorD2, LOW);
-  } 
+  }
   // Se a velocidade do motor for negativa verifica se deve inverter o motor,
   // caso a borda de erro ultrapasse o limit então o motor é ligado na inversa
   // fazendo-o andar para trás
@@ -141,7 +140,7 @@ void set_motors(int left_speed, int right_speed, int error){
   if(left_speed > 0) {
     digitalWrite(motorE1, LOW);
     digitalWrite(motorE2, HIGH);
-  } 
+  }
   // Se a velocidade do motor for negativa verifica se deve inverter o motor,
   // caso a borda de erro ultrapasse o limit então o motor é ligado na inversa
   // fazendo-o andar para trás
