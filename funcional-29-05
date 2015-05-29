@@ -29,7 +29,7 @@ const int weight2 = 2;                      // TERMO DE PESO PARA SENSOR ANALÓG
 const int weight3 = 3;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DA MEIO-BORDA
 const int weight4 = 4;                      // TERMO DE PESO PARA SENSOR ANALÓGIO DA BORDA
 
-const int max = 150;                        // VELOCIDADE MÁXIMA ATINGIDA PELO MOTOR
+const int max = 200;                        // VELOCIDADE MÁXIMA ATINGIDA PELO MOTOR
 int maxInverse = 60;                        // VELOCIDADE MÁXIMA DA INVERSA LIDA PELO MOTOR
 int errorBound = 40;                        // CONFIGURA O ERRO MÁXIMO PARA QUE UM DOS MOTORES SEJA LIGADO A INVERSA
 
@@ -245,32 +245,34 @@ double calcError(int sensors[NUM_SENSORS]) {
 
 // Valida se todos os sensores não estão lendo preto para que seja mantido o erro anterior
 int processValues(int s[8]) {
-  //printValues(s);
   if(s[0] < VALID_THRESHOLD || s[1] < VALID_THRESHOLD || s[2] < VALID_THRESHOLD || s[3] < VALID_THRESHOLD ||
      s[4] < VALID_THRESHOLD || s[5] < VALID_THRESHOLD || s[6] < VALID_THRESHOLD || s[7] < VALID_THRESHOLD) {
+    if((s[7] < VALID_THRESHOLD || s[6] < VALID_THRESHOLD) && (s[0] < VALID_THRESHOLD || s[1] < VALID_THRESHOLD ||
+     s[2] < VALID_THRESHOLD)) {
+      data[7] = 800;
+      data[6] = 800;
+    }
     return 1;
   } else {
     return 0;
   }
 }
 
-/*
-void printValues(int s[8]) {
-  Serial.print(s[0]);
+void printValues() {
+  Serial.print(data[0]);
   Serial.print(" - ");
-  Serial.print(s[1]);
+  Serial.print(data[1]);
   Serial.print(" - ");
-  Serial.print(s[2]);
+  Serial.print(data[2]);
   Serial.print(" - ");
-  Serial.print(s[3]);
+  Serial.print(data[3]);
   Serial.print(" - ");
-  Serial.print(s[4]);
+  Serial.print(data[4]);
   Serial.print(" - ");
-  Serial.print(s[5]);
+  Serial.print(data[5]);
   Serial.print(" - ");
-  Serial.print(s[6]);
+  Serial.print(data[6]);
   Serial.print(" - ");
-  Serial.print(s[7]);
+  Serial.print(data[7]);
   Serial.println("\t\t");
 };
-*/
