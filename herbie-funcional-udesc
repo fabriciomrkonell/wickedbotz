@@ -15,7 +15,7 @@ int motorD1 = 7;
 int motorD2 = 5;
 int flagStart = 1;
 
-int led1 = 9;
+int led1 = 11;
 int led2 = 10;
 
 int data[NUM_SENSORS],
@@ -89,7 +89,8 @@ void led(int status){
 void loop() {
 
   qtra.read(sensorValues, QTR_EMITTERS_OFF);
-              
+
+  data[0] = 900 - sensorValues[0];
   data[1] = 900 - sensorValues[1];
   data[2] = 900 - sensorValues[2];
   data[3] = 900 - sensorValues[3];
@@ -97,11 +98,12 @@ void loop() {
   data[5] = 900 - sensorValues[5];
   data[6] = 900 - sensorValues[6];
   data[7] = 900 - sensorValues[7];
-
+             
   if(processValues(data) == 1) {
 
     Output = calcError(data);
-
+    
+    // PID
     proportional = map(-Output, -max, max, 1000, 6000) - 3500;
     derivative = proportional - last_proportional;
     integral += proportional;
@@ -111,7 +113,7 @@ void loop() {
   }
 
   if(Output <= 8 && Output >= -8){
-    setPower(255, 255);
+    setPower(max, max);
   }else{
     if(power_difference > max) power_difference = max;
     else if(power_difference < -max) power_difference = -max;
