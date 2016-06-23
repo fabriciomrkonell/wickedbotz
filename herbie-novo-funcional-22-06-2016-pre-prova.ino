@@ -31,6 +31,7 @@ int expectedTime = 24500;
 int initTime = 0;
 int currentTime = 0;
 
+// Peso dos erros
 const int weight1 = 1;
 const int weight2 = 2;
 const int weight3 = 4;
